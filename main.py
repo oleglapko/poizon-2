@@ -119,8 +119,8 @@ async def price_handler(message: Message, state: FSMContext):
         f"<b>Расчёт стоимости:</b>\n"
         f"Курс юаня: {rate:.2f} ₽\n"
         f"Стоимость товара с учетом комиссии (10%): {total_item_price} ₽\n"
-        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽\n"
-        f"<b>Итого:</b> {total_cost} ₽\n"
+        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽\n\n"
+        f"<b>Итого:</b> {total_cost} ₽\n\n"
         "Стоимость доставки по РФ (СДЭК, Почта, Boxberry) будет рассчитана нашим менеджером при заказе.\n"
         "Для оформления заказа напишите @the_poiz_adm.",
         reply_markup=new_calc_keyboard

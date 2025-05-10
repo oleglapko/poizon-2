@@ -86,7 +86,7 @@ async def category_handler(message: Message, state: FSMContext):
         return
 
     if category == "3":
-        await message.answer("Свяжитесь с менеджером: @the_poiz_adm", reply_markup=None)
+        await message.answer("Свяжитесь с менеджером: @the_poiz_adm", reply_markup=new_calc_keyboard)
         await state.clear()
         return
 

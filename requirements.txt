@@ -1,0 +1,5 @@
+aiogram==3.7.0
+flask==2.2.5
+werkzeug==2.2.3
+python-dotenv==0.21.0
+requests

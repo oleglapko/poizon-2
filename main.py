@@ -116,20 +116,12 @@ async def price_handler(message: Message, state: FSMContext):
     total_cost = math.ceil(item_price_rub + delivery_cost + commission)
 
     await message.answer(
-        f"<b>Расчёт стоимости:</b>
-"
-        f"Курс юаня: {rate:.2f} ₽
-"
-        f"Стоимость товара с учетом комиссии (10%): {total_item_price} ₽
-"
-        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽
-
-"
-        f"<b>Итого:</b> {total_cost} ₽
-
-"
-        "Стоимость доставки по РФ (СДЭК, Почта, Boxberry) будет рассчитана нашим менеджером при заказе.
-"
+        f"<b>Расчёт стоимости:</b>"
+        f"Курс юаня: {rate:.2f} ₽"
+        f"Стоимость товара с учетом комиссии (10%): {total_item_price} ₽"
+        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽"
+        f"<b>Итого:</b> {total_cost} ₽"
+        "Стоимость доставки по РФ (СДЭК, Почта, Boxberry) будет рассчитана нашим менеджером при заказе."
         "Для оформления заказа напишите @the_poiz_adm.",
         reply_markup=new_calc_keyboard
     )

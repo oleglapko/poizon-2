@@ -13,6 +13,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.client.default import DefaultBotProperties
 from flask import Flask
 from threading import Thread
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 # Загрузка .env
 load_dotenv()
@@ -27,11 +29,21 @@ class Form(StatesGroup):
     waiting_for_category = State()
     waiting_for_price = State()
     waiting_for_delivery_type = State()
+    waiting_for_tracking_code = State()
 
-# Клавиатура нового расчёта
+# Клавиатуры
 new_calc_keyboard = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="🔁 Новый расчёт")]],
     resize_keyboard=True
+)
+
+start_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="🛒 Новый расчёт")],
+        [KeyboardButton(text="📦 Отследить заказ")]
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True
 )
 
 # Получение курса юаня
@@ -49,15 +61,46 @@ def get_cbr_exchange_rate():
         print(f"Ошибка при получении курса ЦБ: {e}")
         return 11.5
 
-# Хэндлер старт
+# Чтение статуса из Google Sheets
+def get_order_status(order_code):
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+        client = gspread.authorize(creds)
+
+        sheet = client.open("Poizon Orders").sheet1
+        records = sheet.get_all_records()
+
+        for row in records:
+            if row["Код заказа"].strip().lower() == order_code.lower():
+                return row["Статус"]
+        return None
+    except Exception as e:
+        print(f"Ошибка при чтении таблицы: {e}")
+        return None
+
+# Хэндлер /start
 @dp.message(F.text == "/start")
 async def start_handler(message: Message, state: FSMContext):
     await message.answer(
-        "Здравствуйте! Я помогу вам рассчитать стоимость товара с доставкой.\n"
-        "Выберите категорию товара:\n"
-        "1. Обувь 👟\n"
-        "2. Футболка/штаны/худи 👕\n"
-        "3. Другое ❓\n\n"
+        "Здравствуйте! Я помогу вам рассчитать стоимость товара с доставкой или отследить заказ.",
+        reply_markup=start_keyboard
+    )
+    await state.clear()
+
+@dp.message(F.text == "🔁 Новый расчёт")
+@dp.message(F.text == "🛒 Новый расчёт")
+async def restart_handler(message: Message, state: FSMContext):
+    await message.answer(
+        "Выберите категорию товара:
+"
+        "1. Обувь 👟
+"
+        "2. Футболка/штаны/худи 👕
+"
+        "3. Другое ❓
+
+"
         "Выберите номер категории (1, 2 или 3):",
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
@@ -71,9 +114,21 @@ async def start_handler(message: Message, state: FSMContext):
     )
     await state.set_state(Form.waiting_for_category)
 
-@dp.message(F.text == "🔁 Новый расчёт")
-async def restart_handler(message: Message, state: FSMContext):
-    await start_handler(message, state)
+@dp.message(F.text == "📦 Отследить заказ")
+async def track_order_start(message: Message, state: FSMContext):
+    await message.answer("Введите код вашего заказа (например: @vasya_1):")
+    await state.set_state(Form.waiting_for_tracking_code)
+
+@dp.message(Form.waiting_for_tracking_code)
+async def handle_tracking_code(message: Message, state: FSMContext):
+    code = message.text.strip()
+    status = get_order_status(code)
+    if status:
+        await message.answer(f"Статус вашего заказа:
+<b>{status}</b>", parse_mode="HTML", reply_markup=new_calc_keyboard)
+    else:
+        await message.answer("Код не найден. Проверьте правильность и попробуйте снова.", reply_markup=new_calc_keyboard)
+    await state.clear()
 
 @dp.message(Form.waiting_for_category)
 async def category_handler(message: Message, state: FSMContext):
@@ -98,7 +153,6 @@ async def price_handler(message: Message, state: FSMContext):
         return
     await state.update_data(price_yuan=price_yuan)
 
-    # Клавиатура для выбора тарифа
     delivery_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Авто 🚚")],
@@ -120,7 +174,6 @@ async def delivery_type_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     category = data["category"]
     price_yuan = data["price_yuan"]
-
     weight = 1.5 if category == "1" else 0.6
     delivery_rate = 800 if delivery_type == "Авто 🚚" else 1900
 
@@ -133,19 +186,28 @@ async def delivery_type_handler(message: Message, state: FSMContext):
     total_cost = math.ceil(item_price_rub + delivery_cost + commission)
 
     await message.answer(
-        f"<b>Расчёт стоимости:</b>\n"
-        f"Курс юаня: {rate:.2f} ₽\n"
-        f"Способ доставки: {delivery_type}\n"
-        f"Стоимость товара с учётом комиссии (10%): {total_item_price} ₽\n"
-        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽\n\n"
-        f"<b>Итого:</b> {total_cost} ₽\n\n"
-        "Стоимость доставки по РФ (СДЭК, Почта, Boxberry) будет рассчитана нашим менеджером при заказе.\n"
+        f"<b>Расчёт стоимости:</b>
+"
+        f"Курс юаня: {rate:.2f} ₽
+"
+        f"Способ доставки: {delivery_type}
+"
+        f"Стоимость товара с учётом комиссии (10%): {total_item_price} ₽
+"
+        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽
+
+"
+        f"<b>Итого:</b> {total_cost} ₽
+
+"
+        "Стоимость доставки по РФ (СДЭК, Почта, Boxberry) будет рассчитана нашим менеджером при заказе.
+"
         "Для оформления заказа напишите @the_poiz_adm.",
         reply_markup=new_calc_keyboard
     )
     await state.clear()
 
-# Удаляем вебхук и запускаем long polling
+# Удаление вебхука и запуск
 async def delete_webhook_and_run():
     try:
         await bot.delete_webhook()
@@ -159,66 +221,6 @@ def start_bot():
     asyncio.run(delete_webhook_and_run())
 
 # Flask-заглушка
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Bot is running!"
-
-def run_flask():
-    app.run(host="0.0.0.0", port=5000)
-
-if __name__ == "__main__":
-    Thread(target=run_flask).start()
-    start_bot()
-
-# Хэндлер цены
-@dp.message(Form.waiting_for_price)
-async def price_handler(message: Message, state: FSMContext):
-    try:
-        price_yuan = float(message.text.strip())
-    except ValueError:
-        await message.answer("Введите число, например: 289")
-        return
-
-    data = await state.get_data()
-    category = data["category"]
-    weight = 1.5 if category == "1" else 0.6
-
-    cbr_rate = get_cbr_exchange_rate()
-    rate = cbr_rate * 1.12
-    item_price_rub = price_yuan * rate
-    delivery_cost = weight * 789
-    commission = item_price_rub * 0.10
-    total_item_price = math.ceil(item_price_rub + commission)
-    total_cost = math.ceil(item_price_rub + delivery_cost + commission)
-
-    await message.answer(
-        f"<b>Расчёт стоимости:</b>\n"
-        f"Курс юаня: {rate:.2f} ₽\n"
-        f"Стоимость товара с учетом комиссии (10%): {total_item_price} ₽\n"
-        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽\n\n"
-        f"<b>Итого:</b> {total_cost} ₽\n\n"
-        "Стоимость доставки по РФ (СДЭК, Почта, Boxberry) будет рассчитана нашим менеджером при заказе.\n"
-        "Для оформления заказа напишите @the_poiz_adm.",
-        reply_markup=new_calc_keyboard
-    )
-    await state.clear()
-
-# Удаляем вебхук и запускаем long polling
-async def delete_webhook_and_run():
-    try:
-        await bot.delete_webhook()
-        print("Вебхук успешно удалён!")
-    except Exception as e:
-        print(f"Не удалось удалить вебхук: {e}")
-    await dp.start_polling(bot, skip_updates=True)
-
-def start_bot():
-    print("Запуск бота через long polling...")
-    asyncio.run(delete_webhook_and_run())
-
-# Flask (фейковый, для Replit / Render)
 app = Flask(__name__)
 
 @app.route("/")

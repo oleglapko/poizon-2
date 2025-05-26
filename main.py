@@ -119,8 +119,8 @@ async def handle_tracking_code(message: Message, state: FSMContext):
     code = message.text.strip()
     status = get_order_status(code)
     if status:
-        await message.answer(f"Статус вашего заказа:"
-<b>{status}</b>", parse_mode="HTML", reply_markup=new_calc_keyboard)
+       await message.answer(f"Статус вашего заказа:\n<b>{status}</b>", parse_mode="HTML", reply_markup=new_calc_keyboard)
+
     else:
         await message.answer("Код не найден. Проверьте правильность и попробуйте снова.", reply_markup=new_calc_keyboard)
     await state.clear()

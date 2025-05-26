@@ -71,13 +71,16 @@ def get_order_status(order_code):
         sheet = client.open("Заказы POIZON").sheet1
         records = sheet.get_all_records()
 
+        print(f"[DEBUG] Ищу заказ: {order_code}")
         for row in records:
-            if row["Код заказа"].strip().lower() == order_code.lower():
-                return row["Статус"]
+            print(f"[DEBUG] Проверка строки: {row}")
+            if row["код заказа"].strip().lower() == order_code.lower():
+                return row["статус"]
         return None
     except Exception as e:
         print(f"Ошибка при чтении таблицы: {e}")
         return None
+
 
 # Хэндлер /start
 @dp.message(F.text == "/start")

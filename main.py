@@ -68,7 +68,8 @@ def get_order_status(order_code):
         creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
         client = gspread.authorize(creds)
 
-        sheet = client.open("Заказы POIZON").sheet1
+      sheet = client.open("Заказы POIZON").worksheet("Лист1")
+
         records = sheet.get_all_records()
 
         print(f"[DEBUG] Ищу заказ: {order_code}")

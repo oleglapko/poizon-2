@@ -72,32 +72,35 @@ def get_order_status(order_code):
         client = gspread.authorize(creds)
 
         sheet = client.open("Poizon Orders").sheet1
-        data = sheet.get_all_records()
+        values = sheet.get_all_values()
 
-        if not data:
+        if not values or len(values) < 2:
             return None
 
-        # Определяем, как называются нужные столбцы
-        header = sheet.row_values(1)
-        order_col = next((h for h in header if "код заказа" in h.lower()), None)
-        status_col = next((h for h in header if "статус" in h.lower()), None)
+        header = values[0]
+        rows = values[1:]
 
-        if not order_col or not status_col:
-            print("Не найдены нужные столбцы в таблице.")
+        # Найти индекс нужных колонок
+        order_idx = next((i for i, h in enumerate(header) if "Код заказа" in h.lower()), None)
+        status_idx = next((i for i, h in enumerate(header) if "Статус" in h.lower()), None)
+
+        if order_idx is None or status_idx is None:
+            print("Не найдены нужные столбцы.")
             return None
 
         code_clean = order_code.strip().lower()
 
-        for row in data:
-            row_code = str(row.get(order_col, "")).strip().lower()
+        for row in rows:
+            if len(row) <= max(order_idx, status_idx):
+                continue  # строка короче, чем нужно
+            row_code = row[order_idx].strip().lower()
             if row_code == code_clean:
-                return row.get(status_col)
+                return row[status_idx]
 
         return None
     except Exception as e:
         print(f"Ошибка при чтении таблицы: {e}")
         return None
-
 
 # Хэндлер /start
 @dp.message(F.text == "/start")

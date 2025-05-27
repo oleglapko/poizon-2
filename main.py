@@ -32,8 +32,12 @@ class Form(StatesGroup):
     waiting_for_tracking_code = State()
 
 # Клавиатуры
+# Клавиатура "Новый расчёт" + "Отследить заказ"
 new_calc_keyboard = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text="🔁 Новый расчёт")]],
+    keyboard=[
+        [KeyboardButton(text="🔁 Новый расчёт")],
+        [KeyboardButton(text="📦 Отследить заказ")]
+    ],
     resize_keyboard=True
 )
 

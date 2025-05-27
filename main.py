@@ -79,8 +79,8 @@ def get_order_status(order_code):
 
         # Определяем, как называются нужные столбцы
         header = sheet.row_values(1)
-        order_col = next((h for h in header if "Код заказа" in h.lower()), None)
-        status_col = next((h for h in header if "Статус" in h.lower()), None)
+        order_col = next((h for h in header if "код заказа" in h.lower()), None)
+        status_col = next((h for h in header if "статус" in h.lower()), None)
 
         if not order_col or not status_col:
             print("Не найдены нужные столбцы в таблице.")

@@ -64,24 +64,27 @@ def get_cbr_exchange_rate():
 # Чтение статуса из Google Sheets
 def get_order_status(order_code):
     try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-        client = gspread.authorize(creds)
-
+        scope = [...]
+        creds = ...
+        client = ...
         sheet = client.open("Poizon Orders").sheet1
         records = sheet.get_all_records()
 
-        # Очищаем пробелы и приводим к нижнему регистру
-        code_clean = order_code.strip().lower()
+        print("📋 Считано строк:", len(records))
+        print("🔍 Пользователь ввёл:", order_code)
 
+        code_clean = order_code.strip().lower()
         for row in records:
             row_code = str(row["Код заказа"]).strip().lower()
+            print("Сравниваем с:", row_code)
             if row_code == code_clean:
+                print("✅ Найдено!")
                 return row["Статус"]
         return None
     except Exception as e:
         print(f"Ошибка при чтении таблицы: {e}")
         return None
+
 
 
 

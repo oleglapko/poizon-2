@@ -68,14 +68,16 @@ def get_order_status(order_code):
         creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
         client = gspread.authorize(creds)
 
-        sheet = client.open("Заказы POIZON").worksheet("Лист1")
+        sheet = client.open("Poizon Orders").sheet1
         records = sheet.get_all_records()
 
-        print(f"[DEBUG] Ищу заказ: {order_code}")
+        # Очищаем пробелы и приводим к нижнему регистру
+        code_clean = order_code.strip().lower()
+
         for row in records:
-            print(f"[DEBUG] Проверка строки: {row}")
-            if row["код заказа"].strip().lower() == order_code.lower():
-                return row["статус"]
+            row_code = str(row["Код заказа"]).strip().lower()
+            if row_code == code_clean:
+                return row["Статус"]
         return None
     except Exception as e:
         print(f"Ошибка при чтении таблицы: {e}")

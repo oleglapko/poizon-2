@@ -32,7 +32,6 @@ class Form(StatesGroup):
     waiting_for_tracking_code = State()
 
 # Клавиатуры
-# Клавиатура "Новый расчёт" + "Отследить заказ"
 new_calc_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🔁 Новый расчёт")],
@@ -71,7 +70,7 @@ def get_order_status(order_code):
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
         client = gspread.authorize(creds)
-        
+
         sheet = client.open("Poizon Orders").sheet1
         records = sheet.get_all_records()
 
@@ -85,7 +84,6 @@ def get_order_status(order_code):
         print(f"Ошибка при чтении таблицы: {e}")
         return None
 
-
 # Хэндлер /start
 @dp.message(F.text == "/start")
 async def start_handler(message: Message, state: FSMContext):
@@ -98,7 +96,7 @@ async def start_handler(message: Message, state: FSMContext):
 @dp.message(F.text == "🔁 Новый расчёт")
 @dp.message(F.text == "🛒 Новый расчёт")
 async def restart_handler(message: Message, state: FSMContext):
-     await message.answer(
+    await message.answer(
         "Выберите категорию товара:\n"
         "1. Обувь 👟\n"
         "2. Футболка/штаны/худи 👕\n"
@@ -126,8 +124,7 @@ async def handle_tracking_code(message: Message, state: FSMContext):
     code = message.text.strip()
     status = get_order_status(code)
     if status:
-       await message.answer(f"Статус вашего заказа:\n<b>{status}</b>", parse_mode="HTML", reply_markup=new_calc_keyboard)
-
+        await message.answer(f"Статус вашего заказа:\n<b>{status}</b>", parse_mode="HTML", reply_markup=new_calc_keyboard)
     else:
         await message.answer("Код не найден. Проверьте правильность и попробуйте снова.", reply_markup=new_calc_keyboard)
     await state.clear()

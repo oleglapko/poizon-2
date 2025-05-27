@@ -68,8 +68,7 @@ def get_order_status(order_code):
         creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
         client = gspread.authorize(creds)
 
-      sheet = client.open("Заказы POIZON").worksheet("Лист1")
-
+        sheet = client.open("Заказы POIZON").worksheet("Лист1")
         records = sheet.get_all_records()
 
         print(f"[DEBUG] Ищу заказ: {order_code}")
@@ -81,6 +80,7 @@ def get_order_status(order_code):
     except Exception as e:
         print(f"Ошибка при чтении таблицы: {e}")
         return None
+
 
 
 # Хэндлер /start

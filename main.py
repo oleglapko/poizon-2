@@ -95,7 +95,6 @@ async def start_handler(message: Message, state: FSMContext):
 @dp.message(F.text == "🛒 Новый расчёт")
 async def restart_handler(message: Message, state: FSMContext):
      await message.answer(
-        "Здравствуйте! Я помогу вам рассчитать стоимость товара с доставкой.\n"
         "Выберите категорию товара:\n"
         "1. Обувь 👟\n"
         "2. Футболка/штаны/худи 👕\n"
@@ -115,7 +114,7 @@ async def restart_handler(message: Message, state: FSMContext):
 
 @dp.message(F.text == "📦 Отследить заказ")
 async def track_order_start(message: Message, state: FSMContext):
-    await message.answer("Введите код вашего заказа (например: @vasya_1):")
+    await message.answer("Введите код вашего заказа (например: vasya_1):")
     await state.set_state(Form.waiting_for_tracking_code)
 
 @dp.message(Form.waiting_for_tracking_code)
@@ -185,13 +184,13 @@ async def delivery_type_handler(message: Message, state: FSMContext):
     total_cost = math.ceil(item_price_rub + delivery_cost + commission)
 
     await message.answer(
-        f"<b>Расчёт стоимости:</b>"
-        f"Курс юаня: {rate:.2f} ₽"
-        f"Способ доставки: {delivery_type}"
-        f"Стоимость товара с учётом комиссии (10%): {total_item_price} ₽"
-        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽"
-        f"<b>Итого:</b> {total_cost} ₽"
-        "Стоимость доставки по РФ (СДЭК, Почта, Boxberry) будет рассчитана нашим менеджером при заказе."
+        f"<b>Расчёт стоимости:</b>\n"
+        f"Курс юаня: {rate:.2f} ₽\n"
+        f"Способ доставки: {delivery_type}\n"
+        f"Стоимость товара с учётом комиссии (10%): {total_item_price} ₽\n"
+        f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽\n\n"
+        f"<b>Итого:</b> {total_cost} ₽\n\n"
+        "Стоимость доставки по РФ (СДЭК, Почта, Boxberry) будет рассчитана нашим менеджером при заказе.\n"
         "Для оформления заказа напишите @the_poiz_adm.",
         reply_markup=new_calc_keyboard
     )

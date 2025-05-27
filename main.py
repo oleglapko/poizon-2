@@ -160,7 +160,12 @@ async def price_handler(message: Message, state: FSMContext):
         resize_keyboard=True,
         one_time_keyboard=True
     )
-    await message.answer("Выберите способ доставки:", reply_markup=delivery_keyboard)
+    await message.answer(
+       f"<b>Выберите способ доставки:\n\n"
+       f"Авто 12-20 дней\n"
+       f"Авиа 4-7 дней\n",
+       reply_markup=delivery_keyboard
+)
     await state.set_state(Form.waiting_for_delivery_type)
 
 @dp.message(Form.waiting_for_delivery_type)

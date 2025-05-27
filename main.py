@@ -161,11 +161,11 @@ async def price_handler(message: Message, state: FSMContext):
         one_time_keyboard=True
     )
     await message.answer(
-    f"<b>Выберите способ доставки:</b>\n\n"
-    f"Авто 🚚 — 12-20 дней\n"
-    f"Авиа ✈️ — 4-7 дней",
-    reply_markup=delivery_keyboard
-)
+        "<b>Выберите способ доставки:</b>\n\n"
+        "Авто 🚚 — 12–20 дней\n"
+        "Авиа ✈️ — 4–7 дней",
+        reply_markup=delivery_keyboard
+    )
     await state.set_state(Form.waiting_for_delivery_type)
 
 @dp.message(Form.waiting_for_delivery_type)
@@ -178,18 +178,19 @@ async def delivery_type_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     category = data["category"]
     price_yuan = data["price_yuan"]
+
     weight = 1.5 if category == "1" else 0.6
     delivery_rate = 800 if delivery_type == "Авто 🚚" else 1900
+
+    # Авиа: минимальный вес — 1 кг
+    if delivery_type == "Авиа ✈️":
+        delivery_cost = max(1.0, weight) * delivery_rate
+    else:
+        delivery_cost = weight * delivery_rate
 
     cbr_rate = get_cbr_exchange_rate()
     rate = cbr_rate * 1.09
     item_price_rub = price_yuan * rate
-    # Если авиа и вес < 1 кг — считаем как минимум 1 кг
-if delivery_type == "Авиа ✈️":
-    delivery_cost = max(1.0, weight) * delivery_rate
-else:
-    delivery_cost = weight * delivery_rate
-
     commission = item_price_rub * 0.10
     total_item_price = math.ceil(item_price_rub + commission)
     total_cost = math.ceil(item_price_rub + delivery_cost + commission)

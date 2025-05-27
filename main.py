@@ -72,17 +72,32 @@ def get_order_status(order_code):
         client = gspread.authorize(creds)
 
         sheet = client.open("Poizon Orders").sheet1
-        records = sheet.get_all_records()
+        data = sheet.get_all_records()
+
+        if not data:
+            return None
+
+        # Определяем, как называются нужные столбцы
+        header = sheet.row_values(1)
+        order_col = next((h for h in header if "код заказа" in h.lower()), None)
+        status_col = next((h for h in header if "статус" in h.lower()), None)
+
+        if not order_col or not status_col:
+            print("Не найдены нужные столбцы в таблице.")
+            return None
 
         code_clean = order_code.strip().lower()
-        for row in records:
-            row_code = str(row["Код заказа"]).strip().lower()
+
+        for row in data:
+            row_code = str(row.get(order_col, "")).strip().lower()
             if row_code == code_clean:
-                return row["Статус"]
+                return row.get(status_col)
+
         return None
     except Exception as e:
         print(f"Ошибка при чтении таблицы: {e}")
         return None
+
 
 # Хэндлер /start
 @dp.message(F.text == "/start")

@@ -184,7 +184,12 @@ async def delivery_type_handler(message: Message, state: FSMContext):
     cbr_rate = get_cbr_exchange_rate()
     rate = cbr_rate * 1.09
     item_price_rub = price_yuan * rate
+    # Если авиа и вес < 1 кг — считаем как минимум 1 кг
+if delivery_type == "Авиа ✈️":
+    delivery_cost = max(1.0, weight) * delivery_rate
+else:
     delivery_cost = weight * delivery_rate
+
     commission = item_price_rub * 0.10
     total_item_price = math.ceil(item_price_rub + commission)
     total_cost = math.ceil(item_price_rub + delivery_cost + commission)

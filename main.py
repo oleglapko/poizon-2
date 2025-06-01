@@ -164,47 +164,16 @@ async def price_handler(message: Message, state: FSMContext):
     except ValueError:
         await message.answer("Введите число, например: 289")
         return
-    await state.update_data(price_yuan=price_yuan)
-
-    delivery_keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="Авто 🚚")],
-            [KeyboardButton(text="Авиа ✈️")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-    await message.answer(
-        "<b>Выберите способ доставки:</b>\n\n"
-        "Авто 🚚 — 12–20 дней\n"
-        "Авиа ✈️ — 4–7 дней",
-        reply_markup=delivery_keyboard
-    )
-    await state.set_state(Form.waiting_for_delivery_type)
-
-@dp.message(Form.waiting_for_delivery_type)
-async def delivery_type_handler(message: Message, state: FSMContext):
-    delivery_type = message.text.strip()
-    if delivery_type not in ["Авто 🚚", "Авиа ✈️"]:
-        await message.answer("Пожалуйста, выберите 'Авто 🚚' или 'Авиа ✈️'")
-        return
 
     data = await state.get_data()
     category = data["category"]
-    price_yuan = data["price_yuan"]
-
     weight = 1.5 if category == "1" else 0.6
-    delivery_rate = 800 if delivery_type == "Авто 🚚" else 1900
-
-    # Авиа: минимальный вес — 1 кг
-    if delivery_type == "Авиа ✈️":
-        delivery_cost = max(1.0, weight) * delivery_rate
-    else:
-        delivery_cost = weight * delivery_rate
+    delivery_rate = 800  # только авто-тариф
 
     cbr_rate = get_cbr_exchange_rate()
     rate = cbr_rate * 1.09
     item_price_rub = price_yuan * rate
+    delivery_cost = weight * delivery_rate
     commission = item_price_rub * 0.10
     total_item_price = math.ceil(item_price_rub + commission)
     total_cost = math.ceil(item_price_rub + delivery_cost + commission)
@@ -212,7 +181,6 @@ async def delivery_type_handler(message: Message, state: FSMContext):
     await message.answer(
         f"<b>Расчёт стоимости:</b>\n"
         f"Курс юаня: {rate:.2f} ₽\n"
-        f"Способ доставки: {delivery_type}\n"
         f"Стоимость товара с учётом комиссии (10%): {total_item_price} ₽\n"
         f"Стоимость доставки из Китая: {math.ceil(delivery_cost)} ₽\n\n"
         f"<b>Итого:</b> {total_cost} ₽\n\n"
